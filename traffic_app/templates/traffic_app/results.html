@@ -1,0 +1,44 @@
+{% extends "traffic_app/base.html" %}
+{% block content %}
+
+<div class="container-card">
+    <h1>Intelligent Traffic Analysis</h1>
+
+    <h2>Results for {{ video.video_file.name }}</h2>
+
+    <ul class="metrics-list">
+        <li><b>Total frames:</b> {{ result.total_frames }}</li>
+        <li><b>Sampled frames:</b> {{ result.sampled_frames }}</li>
+        <li><b>Total vehicles:</b> {{ result.total_vehicles }}</li>
+        <li><b>Average vehicles/frame:</b> {{ result.avg_vehicles_per_frame|floatformat:2 }}</li>
+        <li><b>Density score:</b> {{ result.density_score|floatformat:2 }}</li>
+
+        <li>
+            <b>Congestion:</b>
+            <span class="congestion-{{ result.congestion|lower }}">
+                {{ result.congestion }}
+            </span>
+        </li>
+
+        <li><b>Estimated clearing time:</b> {{ result.clearing_time }} minutes</li>
+        <li><b>Traffic signal recommendation:</b> {{ result.signal_recommendation }}</li>
+    </ul>
+
+    <h3>Video</h3>
+    <div class="video-frame">
+        <video width="100%" controls>
+            <source src="{{ video.video_file.url }}" type="video/mp4">
+        </video>
+    </div>
+
+    <div class="spacer"></div>
+    <h3>⏳ Clearing Time Prediction:</h3>
+<p><strong>{{ result.clearing_time }} seconds</strong></p>
+
+<h3>🚦 Traffic Signal Suggestion:</h3>
+<p><strong>{{ result.signal_recommendation }}</strong></p>
+
+    <a href="{% url 'traffic_app:upload' %}" class="btn">Upload another video</a>
+</div>
+
+{% endblock %}
