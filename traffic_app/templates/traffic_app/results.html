@@ -2,43 +2,171 @@
 {% block content %}
 
 <div class="container-card">
-    <h1>Intelligent Traffic Analysis</h1>
+    <h1>🚦 Traffic Analysis Results</h1>
 
-    <h2>Results for {{ video.video_file.name }}</h2>
+    <!-- Alert Box based on Congestion -->
+    {% if result.congestion == "HIGH" %}
+    <div class="alert-box alert-danger">
+        <strong>⚠️ SEVERE CONGESTION DETECTED!</strong>
+        <p>Immediate action required. Traffic control personnel have been notified.</p>
+    </div>
+    {% elif result.congestion == "MEDIUM" %}
+    <div class="alert-box alert-warning">
+        <strong>⚠️ Moderate Congestion</strong>
+        <p>Traffic flow is affected. Monitor situation closely.</p>
+    </div>
+    {% else %}
+    <div class="alert-box alert-success">
+        <strong>✓ Normal Traffic Flow</strong>
+        <p>Traffic conditions are within normal parameters.</p>
+    </div>
+    {% endif %}
 
-    <ul class="metrics-list">
-        <li><b>Total frames:</b> {{ result.total_frames }}</li>
-        <li><b>Sampled frames:</b> {{ result.sampled_frames }}</li>
-        <li><b>Total vehicles:</b> {{ result.total_vehicles }}</li>
-        <li><b>Average vehicles/frame:</b> {{ result.avg_vehicles_per_frame|floatformat:2 }}</li>
-        <li><b>Density score:</b> {{ result.density_score|floatformat:2 }}</li>
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Vehicles</div>
+            <div class="stat-value">{{ result.total_vehicles }}</div>
+        </div>
 
-        <li>
-            <b>Congestion:</b>
-            <span class="congestion-{{ result.congestion|lower }}">
-                {{ result.congestion }}
-            </span>
-        </li>
+        <div class="stat-card">
+            <div class="stat-label">Avg per Frame</div>
+            <div class="stat-value">{{ result.avg_vehicles_per_frame|floatformat:1 }}</div>
+        </div>
 
-        <li><b>Estimated clearing time:</b> {{ result.clearing_time }} minutes</li>
-        <li><b>Traffic signal recommendation:</b> {{ result.signal_recommendation }}</li>
-    </ul>
+        <div class="stat-card">
+            <div class="stat-label">Density Score</div>
+            <div class="stat-value">{{ result.density_score|floatformat:2 }}</div>
+        </div>
 
-    <h3>Video</h3>
+        <div class="stat-card">
+            <div class="stat-label">Congestion Level</div>
+            <div class="stat-value">
+                <span class="congestion-badge congestion-{{ result.congestion|lower }}">
+                    {{ result.congestion }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Breakdown -->
+    <div class="vehicle-breakdown">
+        <h2>🚗 Vehicle Type Distribution</h2>
+
+        <div class="vehicle-item">
+            <div class="vehicle-icon car">🚗</div>
+            <div class="vehicle-info">
+                <div class="vehicle-name">Cars</div>
+                <div class="vehicle-bar">
+                    <div class="vehicle-bar-fill car" style="width: {{ vehicle_percentages.cars }}%"></div>
+                </div>
+            </div>
+            <div class="vehicle-count">{{ result.count_cars }} ({{ vehicle_percentages.cars }}%)</div>
+        </div>
+
+        <div class="vehicle-item">
+            <div class="vehicle-icon bike">🏍️</div>
+            <div class="vehicle-info">
+                <div class="vehicle-name">Bikes</div>
+                <div class="vehicle-bar">
+                    <div class="vehicle-bar-fill bike" style="width: {{ vehicle_percentages.bikes }}%"></div>
+                </div>
+            </div>
+            <div class="vehicle-count">{{ result.count_bikes }} ({{ vehicle_percentages.bikes }}%)</div>
+        </div>
+
+        <div class="vehicle-item">
+            <div class="vehicle-icon truck">🚚</div>
+            <div class="vehicle-info">
+                <div class="vehicle-name">Trucks</div>
+                <div class="vehicle-bar">
+                    <div class="vehicle-bar-fill truck" style="width: {{ vehicle_percentages.trucks }}%"></div>
+                </div>
+            </div>
+            <div class="vehicle-count">{{ result.count_trucks }} ({{ vehicle_percentages.trucks }}%)</div>
+        </div>
+
+        <div class="vehicle-item">
+            <div class="vehicle-icon bus">🚌</div>
+            <div class="vehicle-info">
+                <div class="vehicle-name">Buses</div>
+                <div class="vehicle-bar">
+                    <div class="vehicle-bar-fill bus" style="width: {{ vehicle_percentages.buses }}%"></div>
+                </div>
+            </div>
+            <div class="vehicle-count">{{ result.count_buses }} ({{ vehicle_percentages.buses }}%)</div>
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="recommendations">
+        <div class="recommendation-card">
+            <h3>⏱️ Clearing Time Estimate</h3>
+            <p><strong>{{ result.clearing_time }} minutes</strong></p>
+            <p>Estimated time for traffic to return to normal flow based on current density.</p>
+        </div>
+
+        <div class="recommendation-card">
+            <h3>🚦 Signal Optimization</h3>
+            <p><strong>{{ result.signal_recommendation }}</strong></p>
+            <p>Green light extension: <strong>+{{ result.signal_green_extension|floatformat:0 }} seconds</strong></p>
+        </div>
+
+        <div class="recommendation-card">
+            <h3>📊 Processing Details</h3>
+            <p>Total frames: <strong>{{ result.total_frames }}</strong></p>
+            <p>Analyzed frames: <strong>{{ result.sampled_frames }}</strong></p>
+            <p>Processing time: <strong>{{ result.processed_at|date:"H:i:s" }}</strong></p>
+        </div>
+    </div>
+
+    <!-- Video Player -->
+    <h2>📹 Source Video</h2>
     <div class="video-frame">
         <video width="100%" controls>
             <source src="{{ video.video_file.url }}" type="video/mp4">
+            Your browser does not support the video tag.
         </video>
     </div>
 
+    <!-- Detailed Metrics -->
+    <div class="metrics-section">
+        <h2>📈 Detailed Analysis</h2>
+        <ul class="metrics-list">
+            <li><b>Video Title:</b> {{ video.title|default:"Untitled" }}</li>
+            <li><b>Upload Time:</b> {{ video.uploaded_at|date:"F d, Y - H:i:s" }}</li>
+            <li><b>Total Frames:</b> {{ result.total_frames }}</li>
+            <li><b>Sampled Frames:</b> {{ result.sampled_frames }}</li>
+            <li><b>Sample Rate:</b> Every 30 frames</li>
+            <li><b>Total Vehicles Detected:</b> {{ result.total_vehicles }}</li>
+            <li><b>Average Vehicles per Frame:</b> {{ result.avg_vehicles_per_frame|floatformat:2 }}</li>
+            <li><b>Traffic Density Score:</b> {{ result.density_score|floatformat:3 }}</li>
+            <li><b>Congestion Classification:</b>
+                <span class="congestion-badge congestion-{{ result.congestion|lower }}">
+                    {{ result.congestion }}
+                </span>
+            </li>
+            <li><b>Clearing Time Prediction:</b> {{ result.clearing_time }} minutes</li>
+            <li><b>Signal Pattern:</b> {{ result.signal_pattern }}</li>
+            <li><b>Recommended Green Extension:</b> +{{ result.signal_green_extension|floatformat:0 }} seconds</li>
+        </ul>
+    </div>
+
     <div class="spacer"></div>
-    <h3>⏳ Clearing Time Prediction:</h3>
-<p><strong>{{ result.clearing_time }} seconds</strong></p>
-
-<h3>🚦 Traffic Signal Suggestion:</h3>
-<p><strong>{{ result.signal_recommendation }}</strong></p>
-
-    <a href="{% url 'traffic_app:upload' %}" class="btn">Upload another video</a>
+    <a href="{% url 'traffic_app:upload' %}" class="btn">📤 Upload Another Video</a>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const bars = document.querySelectorAll('.vehicle-bar-fill');
+    bars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 100);
+    });
+});
+</script>
 
 {% endblock %}

@@ -1,13 +1,126 @@
 {% extends "traffic_app/base.html" %}
 {% block content %}
 <div class="container-card">
-  <h1>Upload Traffic Video</h1>
+  <h1>🚦 Upload Traffic Video</h1>
+  
+  <div class="info-section" style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); padding: 20px; border-radius: 15px; margin-bottom: 30px; border-left: 4px solid #667eea;">
+    <h3 style="color: #667eea; margin-bottom: 15px;">📝 Instructions</h3>
+    <ul style="color: #4a5568; line-height: 1.8;">
+      <li>Upload a video file showing traffic (MP4, AVI, or MOV format)</li>
+      <li>Recommended resolution: 720p or higher for best accuracy</li>
+      <li>Processing typically takes 30-60 seconds for a 30-second video</li>
+      <li>The system will detect cars, bikes, trucks, and buses</li>
+      <li>Alerts will be sent automatically if congestion is detected</li>
+    </ul>
+  </div>
+
   <div class="upload-box">
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
       {% csrf_token %}
-      {{ form.as_p }}
-      <button class="btn" type="submit">Upload & Analyze</button>
+      
+      <div style="margin-bottom: 20px;">
+        <label for="id_title" style="font-weight: 600; color: #2d3748; display: block; margin-bottom: 8px;">
+          Location/Title (Optional):
+        </label>
+        {{ form.title }}
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label for="id_video_file" style="font-weight: 600; color: #2d3748; display: block; margin-bottom: 8px;">
+          Select Video File: <span style="color: #fc5c65;">*</span>
+        </label>
+        {{ form.video_file }}
+        <small style="color: #718096; display: block; margin-top: 5px;">
+          Supported formats: MP4, AVI, MOV (Max size: 100MB)
+        </small>
+      </div>
+      
+      <button class="btn" type="submit" id="submitBtn">
+        📤 Upload & Analyze
+      </button>
+      
+      <div id="uploadProgress" style="display: none; margin-top: 20px;">
+        <div style="background: #e2e8f0; border-radius: 10px; overflow: hidden; height: 30px; position: relative;">
+          <div id="progressBar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; width: 0%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
+            <span id="progressText">0%</span>
+          </div>
+        </div>
+        <p style="text-align: center; margin-top: 10px; color: #667eea; font-weight: 600;">
+          <span class="loading-spinner" style="width: 20px; height: 20px; border-width: 3px; vertical-align: middle; margin-right: 10px;"></span>
+          Processing video...
+        </p>
+      </div>
     </form>
   </div>
+
+  <!-- Features Section -->
+  <div style="margin-top: 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+    <div style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border-top: 4px solid #4299e1;">
+      <div style="font-size: 32px; margin-bottom: 10px;">🤖</div>
+      <h3 style="color: #2d3748; font-size: 18px; margin-bottom: 10px;">AI Detection</h3>
+      <p style="color: #718096; line-height: 1.6;">Advanced YOLOv8 model accurately detects and counts vehicles in real-time.</p>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border-top: 4px solid #48bb78;">
+      <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+      <h3 style="color: #2d3748; font-size: 18px; margin-bottom: 10px;">Traffic Analysis</h3>
+      <p style="color: #718096; line-height: 1.6;">Comprehensive density scores and congestion level classification.</p>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border-top: 4px solid #ed8936;">
+      <div style="font-size: 32px; margin-bottom: 10px;">🚦</div>
+      <h3 style="color: #2d3748; font-size: 18px; margin-bottom: 10px;">Smart Signals</h3>
+      <p style="color: #718096; line-height: 1.6;">Intelligent recommendations for traffic signal optimization.</p>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border-top: 4px solid #9f7aea;">
+      <div style="font-size: 32px; margin-bottom: 10px;">🔔</div>
+      <h3 style="color: #2d3748; font-size: 18px; margin-bottom: 10px;">Auto Alerts</h3>
+      <p style="color: #718096; line-height: 1.6;">Automatic notifications via Slack, Email, and SMS for high congestion.</p>
+    </div>
+  </div>
 </div>
+
+<script>
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+  const fileInput = document.querySelector('input[type="file"]');
+  
+  if (!fileInput.files.length) {
+    e.preventDefault();
+    alert('Please select a video file to upload.');
+    return;
+  }
+  
+  // Show progress
+  document.getElementById('uploadProgress').style.display = 'block';
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').style.opacity = '0.6';
+  
+  // Simulate progress (since actual upload progress is hard to track)
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 15;
+    if (progress > 90) progress = 90;
+    
+    document.getElementById('progressBar').style.width = progress + '%';
+    document.getElementById('progressText').textContent = Math.round(progress) + '%';
+  }, 500);
+  
+  // Store interval ID to clear it later if needed
+  window.uploadInterval = interval;
+});
+
+// File size validation
+document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    if (file.size > maxSize) {
+      alert('File size exceeds 100MB. Please choose a smaller file.');
+      e.target.value = '';
+    }
+  }
+});
+</script>
+
 {% endblock %}

@@ -1,0 +1,235 @@
+{
+  "name": "Traffic Alert Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "traffic-alert",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Webhook - Traffic Alert",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "webhookId": "traffic-alert-webhook",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"congestion_level\"]}}",
+              "operation": "equals",
+              "value2": "HIGH"
+            }
+          ]
+        }
+      },
+      "name": "Check if HIGH Congestion",
+      "type": "n8n-nodes-base.if",
+      "position": [450, 300],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "functionCode": "const data = items[0].json;\n\nconst message = `🚨 SEVERE TRAFFIC ALERT 🚨\n\nLocation: ${data.location}\nCongestion Level: ${data.congestion_level}\nDensity Score: ${data.density_score}\nTotal Vehicles: ${data.total_vehicles}\n\nVehicle Breakdown:\n🚗 Cars: ${data.vehicle_breakdown.cars}\n🏍️ Bikes: ${data.vehicle_breakdown.bikes}\n🚚 Trucks: ${data.vehicle_breakdown.trucks}\n🚌 Buses: ${data.vehicle_breakdown.buses}\n\n⏱️ Estimated Clearing Time: ${data.clearing_time} minutes\n🚦 Recommendation: ${data.signal_recommendation}\n\nTime: ${data.timestamp}`;\n\nreturn [{\n  json: {\n    ...data,\n    formatted_message: message\n  }\n}];"
+      },
+      "name": "Format Alert Message",
+      "type": "n8n-nodes-base.function",
+      "position": [650, 200],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": "YOUR_SLACK_CHANNEL_ID",
+        "text": "={{$json[\"formatted_message\"]}}",
+        "otherOptions": {}
+      },
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "position": [850, 100],
+      "typeVersion": 1,
+      "credentials": {
+        "slackOAuth2Api": "slack_credentials"
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "traffic-alerts@yourdomain.com",
+        "toEmail": "traffic-control@yourdomain.com",
+        "subject": "🚨 URGENT: High Traffic Congestion Alert",
+        "emailType": "html",
+        "message": "={{$json[\"formatted_message\"].replace(/\\n/g, '<br>')}}"
+      },
+      "name": "Send Email Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [850, 200],
+      "typeVersion": 1,
+      "credentials": {
+        "smtp": "email_credentials"
+      }
+    },
+    {
+      "parameters": {
+        "phoneNumber": "YOUR_PHONE_NUMBER",
+        "message": "={{$json[\"formatted_message\"]}}",
+        "options": {}
+      },
+      "name": "Send SMS Alert (Twilio)",
+      "type": "n8n-nodes-base.twilio",
+      "position": [850, 300],
+      "typeVersion": 1,
+      "credentials": {
+        "twilioApi": "twilio_credentials"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_GOOGLE_SHEET_ID",
+        "range": "Sheet1!A:K",
+        "options": {
+          "valueInputMode": "USER_ENTERED"
+        },
+        "values": {
+          "values": [
+            {
+              "column": "={{$json[\"timestamp\"]}}",
+              "value": "={{$json[\"location\"]}}"
+            },
+            {
+              "column": "={{$json[\"congestion_level\"]}}",
+              "value": "={{$json[\"density_score\"]}}"
+            },
+            {
+              "column": "={{$json[\"total_vehicles\"]}}",
+              "value": "={{$json[\"vehicle_breakdown\"][\"cars\"]}}"
+            },
+            {
+              "column": "={{$json[\"vehicle_breakdown\"][\"bikes\"]}}",
+              "value": "={{$json[\"vehicle_breakdown\"][\"trucks\"]}}"
+            },
+            {
+              "column": "={{$json[\"vehicle_breakdown\"][\"buses\"]}}",
+              "value": "={{$json[\"clearing_time\"]}}"
+            },
+            {
+              "column": "={{$json[\"signal_recommendation\"]}}",
+              "value": ""
+            }
+          ]
+        }
+      },
+      "name": "Log to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [850, 400],
+      "typeVersion": 2,
+      "credentials": {
+        "googleSheetsOAuth2Api": "google_sheets_credentials"
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const data = items[0].json;\n\nconst message = `📊 Traffic Update\n\nLocation: ${data.location}\nCongestion: ${data.congestion_level}\nVehicles: ${data.total_vehicles}\nClearing Time: ${data.clearing_time} min\n\nTime: ${new Date(data.timestamp).toLocaleString()}`;\n\nreturn [{\n  json: {\n    ...data,\n    formatted_message: message\n  }\n}];"
+      },
+      "name": "Format Standard Message",
+      "type": "n8n-nodes-base.function",
+      "position": [650, 400],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_GOOGLE_SHEET_ID",
+        "range": "Sheet1!A:K",
+        "options": {
+          "valueInputMode": "USER_ENTERED"
+        }
+      },
+      "name": "Log Medium/Low to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [850, 500],
+      "typeVersion": 2,
+      "credentials": {
+        "googleSheetsOAuth2Api": "google_sheets_credentials"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - Traffic Alert": {
+      "main": [
+        [
+          {
+            "node": "Check if HIGH Congestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if HIGH Congestion": {
+      "main": [
+        [
+          {
+            "node": "Format Alert Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Standard Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Alert Message": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send SMS Alert (Twilio)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Standard Message": {
+      "main": [
+        [
+          {
+            "node": "Log Medium/Low to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-12-11T00:00:00.000Z",
+  "versionId": "1"
+}
